@@ -2150,7 +2150,17 @@ function renderResults() {
   els.resultList.innerHTML = "";
 
   if (!filtered.length) {
-    els.resultList.innerHTML = `<p class="status-text">見つかりませんでした。よみを短くして試してみてください。</p>`;
+    els.resultList.innerHTML = `
+      <div class="empty-result">
+        <p class="status-text">見つかりませんでした。よみを短くして試してみてください。</p>
+        <button class="clear-list-search" type="button">ぜんぶ見る</button>
+      </div>
+    `;
+    els.resultList.querySelector(".clear-list-search").addEventListener("click", () => {
+      els.listSearchInput.value = "";
+      renderResults();
+      els.listSearchInput.focus();
+    });
     els.listStatus.textContent = `${gradeScopeText()}の中では「${query}」に近い漢字が見つかりませんでした。`;
     return;
   }
@@ -2961,6 +2971,22 @@ function stopDraw() {
 const okuriganaQuizzes = [
   {
     label: "送り仮名も考えよう",
+    grade: 1,
+    prompt: "「あおい」は、どう書く？",
+    answer: "青い",
+    explanation: "よくある間違いは「青」だけにすることです。「い」はひらがなで書きます。",
+    options: ["青い", "青", "青おい"]
+  },
+  {
+    label: "送り仮名も考えよう",
+    grade: 1,
+    prompt: "「はいる」は、どう書く？",
+    answer: "入る",
+    explanation: "「入る」は「入」に「る」を付けます。「人」とまちがえないようにします。",
+    options: ["入る", "人る", "入"]
+  },
+  {
+    label: "送り仮名も考えよう",
     grade: 2,
     prompt: "「ひろい」は、どう書く？",
     answer: "広い",
@@ -2998,10 +3024,96 @@ const okuriganaQuizzes = [
     answer: "多い",
     explanation: "よくある間違いは「多おい」。正しくは「多い」です。",
     options: ["多い", "多おい", "多"]
+  },
+  {
+    label: "送り仮名も考えよう",
+    grade: 3,
+    prompt: "「さむい」は、どう書く？",
+    answer: "寒い",
+    explanation: "「寒い」は「寒」に「い」を付けます。「寒」だけでは言葉の形が足りません。",
+    options: ["寒い", "寒", "寒むい"]
+  },
+  {
+    label: "送り仮名も考えよう",
+    grade: 3,
+    prompt: "「もつ」は、どう書く？",
+    answer: "持つ",
+    explanation: "「持つ」は「持」に「つ」を付けます。「持」だけにしないようにします。",
+    options: ["持つ", "持", "持っ"]
+  },
+  {
+    label: "送り仮名も考えよう",
+    grade: 4,
+    prompt: "「かわる」は、どう書く？",
+    answer: "変わる",
+    explanation: "「変わる」は「変」に「わる」を付けます。「変る」では送り仮名が足りません。",
+    options: ["変わる", "変る", "変わ"]
+  },
+  {
+    label: "送り仮名も考えよう",
+    grade: 4,
+    prompt: "「はたらく」は、どう書く？",
+    answer: "働く",
+    explanation: "「働く」は「働」に「く」を付けます。送り仮名を落とさないようにします。",
+    options: ["働く", "働", "働らく"]
+  },
+  {
+    label: "送り仮名も考えよう",
+    grade: 5,
+    prompt: "「くらべる」は、どう書く？",
+    answer: "比べる",
+    explanation: "「比べる」は「比」に「べる」を付けます。「比る」では送り仮名が足りません。",
+    options: ["比べる", "比る", "比べ"]
+  },
+  {
+    label: "送り仮名も考えよう",
+    grade: 5,
+    prompt: "「たしかめる」は、どう書く？",
+    answer: "確かめる",
+    explanation: "「確かめる」は「確」に「かめる」を付けます。言葉の形を最後まで見ます。",
+    options: ["確かめる", "確める", "確か"]
+  },
+  {
+    label: "送り仮名も考えよう",
+    grade: 6,
+    prompt: "「やさしい」は、どう書く？",
+    answer: "優しい",
+    explanation: "「優しい」は「優」に「しい」を付けます。「優い」では送り仮名が足りません。",
+    options: ["優しい", "優い", "優"]
+  },
+  {
+    label: "送り仮名も考えよう",
+    grade: 6,
+    prompt: "「みとめる」は、どう書く？",
+    answer: "認める",
+    explanation: "「認める」は「認」に「める」を付けます。「認る」では読み方が変わってしまいます。",
+    options: ["認める", "認る", "認"]
   }
 ];
 
 const sentenceQuizzes = [
+  {
+    label: "文の中の漢字",
+    grade: 1,
+    prompt: "あおい 空を見る。",
+    before: "",
+    blankReading: "あお",
+    after: "い 空を見る。",
+    answer: "青",
+    explanation: "「あおい」は「青い」と書きます。",
+    options: ["青", "赤", "白", "空"]
+  },
+  {
+    label: "文の中の漢字",
+    grade: 1,
+    prompt: "山に のぼる。",
+    before: "",
+    blankReading: "やま",
+    after: "に のぼる。",
+    answer: "山",
+    explanation: "「やま」は「山」と書きます。",
+    options: ["山", "川", "田", "森"]
+  },
   {
     label: "文の中の漢字",
     grade: 2,
@@ -3034,6 +3146,94 @@ const sentenceQuizzes = [
     answer: "新",
     explanation: "「あたらしい」は「新しい」と書きます。",
     options: ["新", "親", "古", "明"]
+  },
+  {
+    label: "文の中の漢字",
+    grade: 3,
+    prompt: "寒い 日に 手ぶくろをする。",
+    before: "",
+    blankReading: "さむ",
+    after: "い 日に 手ぶくろをする。",
+    answer: "寒",
+    explanation: "「さむい」は「寒い」と書きます。",
+    options: ["寒", "暑", "温", "冷"]
+  },
+  {
+    label: "文の中の漢字",
+    grade: 3,
+    prompt: "荷物を 持つ。",
+    before: "荷物を",
+    blankReading: "も",
+    after: "つ。",
+    answer: "持",
+    explanation: "「もつ」は「持つ」と書きます。",
+    options: ["持", "待", "打", "投"]
+  },
+  {
+    label: "文の中の漢字",
+    grade: 4,
+    prompt: "気温が 低い。",
+    before: "気温が",
+    blankReading: "ひく",
+    after: "い。",
+    answer: "低",
+    explanation: "「ひくい」は「低い」と書きます。",
+    options: ["低", "底", "短", "軽"]
+  },
+  {
+    label: "文の中の漢字",
+    grade: 4,
+    prompt: "係を 変わる。",
+    before: "係を",
+    blankReading: "か",
+    after: "わる。",
+    answer: "変",
+    explanation: "「かわる」は「変わる」と書きます。",
+    options: ["変", "化", "代", "返"]
+  },
+  {
+    label: "文の中の漢字",
+    grade: 5,
+    prompt: "結果を 比べる。",
+    before: "結果を",
+    blankReading: "くら",
+    after: "べる。",
+    answer: "比",
+    explanation: "「くらべる」は「比べる」と書きます。",
+    options: ["比", "批", "評", "判"]
+  },
+  {
+    label: "文の中の漢字",
+    grade: 5,
+    prompt: "問題を 解く。",
+    before: "問題を",
+    blankReading: "と",
+    after: "く。",
+    answer: "解",
+    explanation: "「とく」は「解く」と書きます。",
+    options: ["解", "説", "答", "決"]
+  },
+  {
+    label: "文の中の漢字",
+    grade: 6,
+    prompt: "友だちのよさを 認める。",
+    before: "友だちのよさを",
+    blankReading: "みと",
+    after: "める。",
+    answer: "認",
+    explanation: "「みとめる」は「認める」と書きます。",
+    options: ["認", "記", "誌", "誤"]
+  },
+  {
+    label: "文の中の漢字",
+    grade: 6,
+    prompt: "優しい 言葉をかける。",
+    before: "",
+    blankReading: "やさ",
+    after: "しい 言葉をかける。",
+    answer: "優",
+    explanation: "「やさしい」は「優しい」と書きます。",
+    options: ["優", "復", "複", "保"]
   }
 ];
 
