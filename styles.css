@@ -114,7 +114,7 @@ input {
 
 .search-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
   margin-top: 8px;
 }
@@ -123,6 +123,13 @@ input {
   display: grid;
   gap: 8px;
   margin-bottom: 0;
+}
+
+.input-hint {
+  margin: -2px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .sentence-box label {
@@ -424,7 +431,7 @@ input {
 
 .list-search {
   display: grid;
-  grid-template-columns: 1fr 96px;
+  grid-template-columns: 1fr;
   gap: 8px;
   align-items: end;
   margin-top: 10px;
@@ -1471,7 +1478,7 @@ body {
   }
 
   .search-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 8px;
     margin-top: 8px;
   }
@@ -1534,7 +1541,7 @@ body {
   }
 
   .list-search {
-    grid-template-columns: 1fr 86px;
+    grid-template-columns: 1fr;
     gap: 7px;
   }
 

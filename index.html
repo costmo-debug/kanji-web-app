@@ -26,17 +26,17 @@
       <section class="search-panel" aria-label="かんじをさがす">
         <div class="hero-guide">
           <img src="./assets/super-cat.png" alt="スーパー猫ちゃん" class="super-cat">
-          <div class="cat-bubble" id="catBubble">ぼくに文を話してね。書ける漢字をいっしょに見つけよう！</div>
+          <div class="cat-bubble" id="catBubble">ここに文やことばを入れてね。マイクで話すときは、キーボードのマイクを使えるよ。</div>
         </div>
         <div class="sentence-box">
-          <label for="sentenceInput">しらべたいことば</label>
-          <textarea id="sentenceInput" rows="2" placeholder="例: こうえんをはしる"></textarea>
+          <label for="sentenceInput">しらべたい文やことば</label>
+          <textarea id="sentenceInput" rows="2" placeholder="ここをタップして入れてね"></textarea>
+          <p class="input-hint">声で入れるときは、キーボードのマイクを使ってね。</p>
         </div>
         <div class="search-row">
           <button id="analyzeSentenceButton" class="primary-button" type="button">見つける</button>
-          <button id="voiceButton" class="round-button" type="button" aria-label="音声でさがす">話す</button>
         </div>
-        <p id="voiceStatus" class="status-text" aria-live="polite">文章でも、文字でもさがせます。Chromeで音声入力も試せます。</p>
+        <p id="voiceStatus" class="status-text" aria-live="polite">文字でも、キーボードのマイクでもさがせます。</p>
         <div id="highlightedSentence" class="highlighted-sentence" aria-live="polite"></div>
         <div id="sentenceCandidates" class="sentence-candidates" aria-live="polite"></div>
       </section>
@@ -59,9 +59,8 @@
           <div class="list-search">
             <label for="listSearchInput">一覧からさがす</label>
             <input id="listSearchInput" type="search" autocomplete="off" placeholder="例: 走る、はしる、走">
-            <button id="listVoiceButton" class="round-button" type="button">話す</button>
           </div>
-          <p id="listStatus" class="status-text" aria-live="polite">文字でも、音声でもさがせます。</p>
+          <p id="listStatus" class="status-text" aria-live="polite">文字でも、キーボードのマイクでもさがせます。</p>
         </article>
         <div id="resultList" class="result-list"></div>
       </section>

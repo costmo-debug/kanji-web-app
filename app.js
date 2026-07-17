@@ -164,9 +164,7 @@ const kanjiData = [
 const els = {
   resultList: document.querySelector("#resultList"),
   listSearchInput: document.querySelector("#listSearchInput"),
-  listVoiceButton: document.querySelector("#listVoiceButton"),
   listStatus: document.querySelector("#listStatus"),
-  voiceButton: document.querySelector("#voiceButton"),
   voiceStatus: document.querySelector("#voiceStatus"),
   catBubble: document.querySelector("#catBubble"),
   sentenceInput: document.querySelector("#sentenceInput"),
@@ -1706,87 +1704,6 @@ function launchFireworks(size = "small") {
   }, size === "big" ? 2600 : 1800);
 }
 
-function guideKeyboardDictation() {
-  els.sentenceInput.focus();
-  els.voiceStatus.textContent = "入力欄が開きました。iPhoneキーボードのマイクで話すと、そのまま候補を出せます。";
-  setCatMessage("キーボードのマイクで話してね。言葉が入ったら、ぼくが候補を探すよ！");
-}
-
-function guideListKeyboardDictation() {
-  els.listSearchInput.focus();
-  els.listStatus.textContent = "入力欄が開きました。iPhoneキーボードのマイクで話すと、一覧から探せます。";
-}
-
-function setupVoice() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    els.voiceStatus.textContent = "iPhoneでは、入力欄を開いてキーボードのマイクで話せます。";
-    els.voiceButton.addEventListener("click", guideKeyboardDictation);
-    return;
-  }
-  const recognition = new SpeechRecognition();
-  recognition.lang = "ja-JP";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 3;
-  els.voiceButton.addEventListener("click", () => {
-    if (!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
-      guideKeyboardDictation();
-      return;
-    }
-    try {
-      els.voiceStatus.textContent = "聞いています。ことばを言ってください。";
-      recognition.start();
-    } catch (error) {
-      guideKeyboardDictation();
-    }
-  });
-  recognition.addEventListener("result", (event) => {
-    const text = event.results[0][0].transcript;
-    clearSelectedAlternatives();
-    els.sentenceInput.value = text;
-    els.voiceStatus.textContent = `「${text}」から候補を出しました。ちがう時は文章を直してもう一度さがせます。`;
-    setCatMessage(`「${text}」って聞こえたよ。候補を出したよ！`);
-    renderSentenceCandidates();
-    renderResults();
-    switchView("searchView");
-  });
-  recognition.addEventListener("error", () => {
-    guideKeyboardDictation();
-  });
-}
-
-function setupListVoice() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    els.listVoiceButton.addEventListener("click", guideListKeyboardDictation);
-    return;
-  }
-  const recognition = new SpeechRecognition();
-  recognition.lang = "ja-JP";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 3;
-  els.listVoiceButton.addEventListener("click", () => {
-    if (!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
-      guideListKeyboardDictation();
-      return;
-    }
-    try {
-      els.listStatus.textContent = "聞いています。漢字や読みを言ってください。";
-      recognition.start();
-    } catch (error) {
-      guideListKeyboardDictation();
-    }
-  });
-  recognition.addEventListener("result", (event) => {
-    const text = event.results[0][0].transcript;
-    els.listSearchInput.value = text;
-    renderResults();
-    els.listStatus.textContent = `「${text}」で一覧をさがしました。`;
-    switchView("listView");
-  });
-  recognition.addEventListener("error", guideListKeyboardDictation);
-}
-
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => switchView(tab.dataset.view));
 });
@@ -1807,7 +1724,14 @@ els.sentenceInput.addEventListener("input", () => {
     if (els.sentenceInput.value.trim()) renderSentenceCandidates();
   }, 500);
 });
+els.sentenceInput.addEventListener("focus", () => {
+  els.voiceStatus.textContent = "文字でも、キーボードのマイクでも入力できます。入れたら候補を出します。";
+  setCatMessage("ここに文やことばを入れてね。声で入れる時はキーボードのマイクを使ってね。");
+});
 els.listSearchInput.addEventListener("input", renderResults);
+els.listSearchInput.addEventListener("focus", () => {
+  els.listStatus.textContent = "文字でも、キーボードのマイクでも一覧をさがせます。";
+});
 els.traceCanvas.addEventListener("pointerdown", startDraw);
 els.traceCanvas.addEventListener("pointermove", draw);
 els.traceCanvas.addEventListener("pointerup", stopDraw);
@@ -1837,8 +1761,6 @@ window.addEventListener("resize", clearCanvas);
 selectKanji(selectedKanji);
 renderResults();
 resizeCanvas();
-setupVoice();
-setupListVoice();
 makeQuiz();
 renderStickers();
 switchView("searchView");
