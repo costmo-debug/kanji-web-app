@@ -229,6 +229,8 @@ let sentenceInputTimer = 0;
 let traceParentView = "searchView";
 let selectedPhotoFile = null;
 let selectedPhotoFocus = { x: 0.5, y: 0.58 };
+let selectedPhotoBox = { x: 0.33, y: 0.44, width: 0.34, height: 0.28 };
+let photoDragStart = null;
 
 function clearSelectedAlternatives() {
   Object.keys(selectedAlternativeByReading).forEach((key) => {
@@ -4071,32 +4073,88 @@ function binarizeCanvas(canvas) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-function setPhotoFocusFromEvent(event) {
-  if (!selectedPhotoFile) return;
+function photoImageMetrics() {
   const image = els.photoPreview.querySelector("img");
   const rect = (image || els.photoPreview).getBoundingClientRect();
-  const x = Math.min(0.95, Math.max(0.05, (event.clientX - rect.left) / rect.width));
-  const y = Math.min(0.95, Math.max(0.05, (event.clientY - rect.top) / rect.height));
-  selectedPhotoFocus = { x, y };
   const previewRect = els.photoPreview.getBoundingClientRect();
-  const markerX = rect.left - previewRect.left + rect.width * x;
-  const markerY = rect.top - previewRect.top + rect.height * y;
+  return { image, rect, previewRect };
+}
+
+function pointInPhotoImage(event) {
+  const { rect } = photoImageMetrics();
+  return {
+    x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
+    y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height))
+  };
+}
+
+function updatePhotoBoxMarker() {
+  const { rect, previewRect } = photoImageMetrics();
+  const markerX = rect.left - previewRect.left + rect.width * (selectedPhotoBox.x + selectedPhotoBox.width / 2);
+  const markerY = rect.top - previewRect.top + rect.height * (selectedPhotoBox.y + selectedPhotoBox.height / 2);
+  const markerW = rect.width * selectedPhotoBox.width;
+  const markerH = rect.height * selectedPhotoBox.height;
   els.photoPreview.style.setProperty("--focus-x", `${markerX}px`);
   els.photoPreview.style.setProperty("--focus-y", `${markerY}px`);
-  els.photoPreview.style.setProperty("--focus-w", `${Math.min(rect.width * 0.34, 170)}px`);
-  els.photoPreview.style.setProperty("--focus-h", `${Math.min(rect.height * 0.28, 130)}px`);
+  els.photoPreview.style.setProperty("--focus-w", `${markerW}px`);
+  els.photoPreview.style.setProperty("--focus-h", `${markerH}px`);
   els.photoPreview.classList.add("has-focus");
-  setPhotoStatus("読みたい場所を選びました。「写真を読む」を押してください。");
+}
+
+function setPhotoBoxFromPoints(start, end) {
+  const minX = Math.min(start.x, end.x);
+  const minY = Math.min(start.y, end.y);
+  const maxX = Math.max(start.x, end.x);
+  const maxY = Math.max(start.y, end.y);
+  const width = Math.max(0.08, maxX - minX);
+  const height = Math.max(0.08, maxY - minY);
+  selectedPhotoBox = {
+    x: Math.min(0.98 - width, minX),
+    y: Math.min(0.98 - height, minY),
+    width,
+    height
+  };
+  selectedPhotoFocus = {
+    x: selectedPhotoBox.x + selectedPhotoBox.width / 2,
+    y: selectedPhotoBox.y + selectedPhotoBox.height / 2
+  };
+  updatePhotoBoxMarker();
+}
+
+function startPhotoSelection(event) {
+  if (!selectedPhotoFile) return;
+  event.preventDefault();
+  photoDragStart = pointInPhotoImage(event);
+  setPhotoBoxFromPoints(photoDragStart, photoDragStart);
+  els.photoPreview.setPointerCapture?.(event.pointerId);
+}
+
+function movePhotoSelection(event) {
+  if (!photoDragStart) return;
+  event.preventDefault();
+  setPhotoBoxFromPoints(photoDragStart, pointInPhotoImage(event));
+}
+
+function finishPhotoSelection(event) {
+  if (!photoDragStart) return;
+  event.preventDefault();
+  setPhotoBoxFromPoints(photoDragStart, pointInPhotoImage(event));
+  photoDragStart = null;
+  setPhotoStatus("読みたいところを囲みました。「写真を読む」を押してください。");
 }
 
 async function makeFocusCropForOcr(file) {
   const image = await imageSourceFromFile(file);
-  const cropWidth = image.naturalWidth * 0.34;
-  const cropHeight = image.naturalHeight * 0.28;
-  const centerX = image.naturalWidth * selectedPhotoFocus.x;
-  const centerY = image.naturalHeight * selectedPhotoFocus.y;
-  const cropX = Math.max(0, Math.min(image.naturalWidth - cropWidth, centerX - cropWidth / 2));
-  const cropY = Math.max(0, Math.min(image.naturalHeight - cropHeight, centerY - cropHeight / 2));
+  const paddingX = selectedPhotoBox.width * 0.12;
+  const paddingY = selectedPhotoBox.height * 0.12;
+  const cropRatioX = Math.max(0, selectedPhotoBox.x - paddingX);
+  const cropRatioY = Math.max(0, selectedPhotoBox.y - paddingY);
+  const cropRatioW = Math.min(1 - cropRatioX, selectedPhotoBox.width + paddingX * 2);
+  const cropRatioH = Math.min(1 - cropRatioY, selectedPhotoBox.height + paddingY * 2);
+  const cropX = image.naturalWidth * cropRatioX;
+  const cropY = image.naturalHeight * cropRatioY;
+  const cropWidth = image.naturalWidth * cropRatioW;
+  const cropHeight = image.naturalHeight * cropRatioH;
   const canvas = document.createElement("canvas");
   const targetWidth = 900;
   const scale = targetWidth / cropWidth;
@@ -4110,9 +4168,12 @@ async function makeFocusCropForOcr(file) {
 }
 
 async function makeCenterCropForOcr(file) {
+  const previousBox = selectedPhotoBox;
   const previousFocus = selectedPhotoFocus;
   selectedPhotoFocus = { x: 0.5, y: 0.58 };
+  selectedPhotoBox = { x: 0.33, y: 0.44, width: 0.34, height: 0.28 };
   const blob = await makeFocusCropForOcr(file);
+  selectedPhotoBox = previousBox;
   selectedPhotoFocus = previousFocus;
   return blob;
 }
@@ -4264,23 +4325,22 @@ els.photoInput.addEventListener("change", () => {
   if (!file) return;
   selectedPhotoFile = file;
   selectedPhotoFocus = { x: 0.5, y: 0.58 };
+  selectedPhotoBox = { x: 0.33, y: 0.44, width: 0.34, height: 0.28 };
+  photoDragStart = null;
   const url = URL.createObjectURL(file);
   els.photoPreview.innerHTML = `<img src="${url}" alt="選んだ写真">`;
   const previewImage = els.photoPreview.querySelector("img");
   previewImage.addEventListener("load", () => {
-    const imageRect = previewImage.getBoundingClientRect();
-    const previewRect = els.photoPreview.getBoundingClientRect();
-    els.photoPreview.style.setProperty("--focus-x", `${imageRect.left - previewRect.left + imageRect.width * selectedPhotoFocus.x}px`);
-    els.photoPreview.style.setProperty("--focus-y", `${imageRect.top - previewRect.top + imageRect.height * selectedPhotoFocus.y}px`);
-    els.photoPreview.style.setProperty("--focus-w", `${Math.min(imageRect.width * 0.34, 170)}px`);
-    els.photoPreview.style.setProperty("--focus-h", `${Math.min(imageRect.height * 0.28, 130)}px`);
-    els.photoPreview.classList.add("has-focus");
+    updatePhotoBoxMarker();
   });
   els.cameraSearchInput.value = "";
-  setPhotoStatus("写真を選びました。読みたい漢字のあたりをタップしてから「写真を読む」を押してください。");
-  setCatMessage("写真を選べたよ。読みたいところをタップしてね。");
+  setPhotoStatus("写真を選びました。読みたいところを指で囲んでから「写真を読む」を押してください。");
+  setCatMessage("写真を選べたよ。読みたいところを指で囲んでね。");
 });
-els.photoPreview.addEventListener("pointerdown", setPhotoFocusFromEvent);
+els.photoPreview.addEventListener("pointerdown", startPhotoSelection);
+els.photoPreview.addEventListener("pointermove", movePhotoSelection);
+els.photoPreview.addEventListener("pointerup", finishPhotoSelection);
+els.photoPreview.addEventListener("pointercancel", () => { photoDragStart = null; });
 els.photoOcrButton.addEventListener("click", readPhotoText);
 els.cameraSearchButton.addEventListener("click", () => {
   showPhotoCandidates(els.cameraSearchInput.value);

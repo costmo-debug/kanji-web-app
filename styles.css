@@ -844,7 +844,8 @@ body[data-view="traceView"][data-trace-parent="listView"] .search-panel {
   color: var(--muted);
   overflow: hidden;
   cursor: crosshair;
-  touch-action: manipulation;
+  touch-action: none;
+  user-select: none;
 }
 
 .photo-preview.has-focus::after {
