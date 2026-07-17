@@ -190,6 +190,7 @@ const els = {
   traceBoard: document.querySelector("#traceBoard"),
   showModelButton: document.querySelector("#showModelButton"),
   playStrokeButton: document.querySelector("#playStrokeButton"),
+  traceBackButton: document.querySelector("#traceBackButton"),
   nextCandidateButton: document.querySelector("#nextCandidateButton"),
   photoInput: document.querySelector("#photoInput"),
   photoPreview: document.querySelector("#photoPreview"),
@@ -3256,6 +3257,9 @@ function switchView(id) {
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === activeNav));
   document.body.dataset.view = id;
   document.body.dataset.traceParent = id === "traceView" ? traceParentView : "";
+  if (id === "traceView" || id === "searchView") {
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  }
 }
 
 function switchStudyPanel(id) {
@@ -4057,6 +4061,10 @@ els.traceCanvas.addEventListener("pointerdown", startDraw);
 els.traceCanvas.addEventListener("pointermove", draw);
 els.traceCanvas.addEventListener("pointerup", stopDraw);
 els.traceCanvas.addEventListener("pointerleave", stopDraw);
+els.traceBackButton.addEventListener("click", () => {
+  switchView(traceParentView || "searchView");
+  setCatMessage("さがす画面にもどったよ。次のことばも入れてみてね。");
+});
 els.nextQuizButton.addEventListener("click", makeQuiz);
 els.nextCandidateButton.addEventListener("click", goToNextCandidate);
 els.photoInput.addEventListener("change", () => {
