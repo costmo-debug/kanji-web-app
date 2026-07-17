@@ -3976,6 +3976,13 @@ function setPhotoStatus(message) {
   if (els.photoOcrStatus) els.photoOcrStatus.textContent = message;
 }
 
+function showPhotoCandidates(text) {
+  clearSelectedAlternatives();
+  els.sentenceInput.value = text;
+  renderSentenceCandidates();
+  switchView("searchView");
+}
+
 async function readPhotoText() {
   if (!selectedPhotoFile) {
     setPhotoStatus("先に写真を選んでください。");
@@ -3988,6 +3995,7 @@ async function readPhotoText() {
 
   els.photoOcrButton.disabled = true;
   els.cameraSearchButton.disabled = true;
+  els.photoOcrButton.textContent = "読んでいます";
   setPhotoStatus("写真を読んでいます。初回は少し時間がかかります。");
   setCatMessage("写真の文字を読んでいるよ。少しだけ待ってね。");
 
@@ -4000,6 +4008,11 @@ async function readPhotoText() {
         }
       }
     });
+    if (Tesseract.PSM) {
+      await worker.setParameters({
+        tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT
+      });
+    }
     const result = await worker.recognize(selectedPhotoFile);
     const text = cleanOcrText(result.data.text);
     if (!text) {
@@ -4008,8 +4021,9 @@ async function readPhotoText() {
       return;
     }
     els.cameraSearchInput.value = text;
-    setPhotoStatus("読み取った文字を確認して、「候補を出す」を押してください。");
-    setCatMessage("読めた文字を入れたよ。ちがうところがあれば直してね。");
+    setPhotoStatus("読み取った文字から候補を出しました。違う時は文字を直して「候補を出す」を押してください。");
+    setCatMessage("写真から候補を出したよ。見たい漢字を選んでね。");
+    showPhotoCandidates(text);
   } catch (error) {
     setPhotoStatus("写真の読み取りに失敗しました。文字が大きく写るように撮り直すか、手で入力してください。");
     setCatMessage("写真が少し読みにくかったみたい。手入力でも続けられるよ。");
@@ -4017,6 +4031,7 @@ async function readPhotoText() {
     if (worker) await worker.terminate().catch(() => {});
     els.photoOcrButton.disabled = false;
     els.cameraSearchButton.disabled = false;
+    els.photoOcrButton.textContent = "写真を読む";
   }
 }
 
@@ -4083,10 +4098,7 @@ els.photoInput.addEventListener("change", () => {
 });
 els.photoOcrButton.addEventListener("click", readPhotoText);
 els.cameraSearchButton.addEventListener("click", () => {
-  clearSelectedAlternatives();
-  els.sentenceInput.value = els.cameraSearchInput.value;
-  renderSentenceCandidates();
-  switchView("searchView");
+  showPhotoCandidates(els.cameraSearchInput.value);
 });
 els.cameraSearchInput.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" || (!event.ctrlKey && !event.metaKey)) return;
