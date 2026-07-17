@@ -1311,6 +1311,14 @@ const supplementalKanjiMeanings = {
   安: ["安心できること。値段が低いこと。"],
   暗: ["光が少なくて見えにくいこと。"],
   医: ["病気やけがをなおすことに関係する字。"],
+  委: ["人にまかせること。役目をゆだねること。"],
+  員: ["組や団体に入っている人。"],
+  院: ["学校や病院など、建物や組織に使う字。"],
+  飲: ["水や飲み物を口から体に入れること。"],
+  央: ["まんなか。中心。"],
+  横: ["左右の方向。たての反対。"],
+  屋: ["家や店。ものを売る人にも使う字。"],
+  荷: ["運ぶもの。にもつ。"],
   意: ["心で考えていること。意味。"],
   育: ["大きく育てること。育つこと。"],
   運: ["ものを動かして別の場所へ移すこと。めぐり合わせ。"],
@@ -1682,6 +1690,15 @@ const supplementalKanjiMeanings = {
   暴: ["乱暴なこと。急にはげしくなること。"],
   脈: ["血の流れ。物事のつながり。"],
   務: ["しなければならない仕事。"],
+  迷: ["道や考えが分からなくなること。"],
+  綿: ["やわらかい白い繊維。布団などに使うもの。"],
+  輸: ["物を別の場所へ運ぶこと。"],
+  余: ["あまること。残り。"],
+  容: ["中に入れること。すがたや内容。"],
+  略: ["短く省くこと。だいたいのこと。"],
+  留: ["その場所にとどまること。とめること。"],
+  歴: ["これまでに通ってきたあと。歴史。"],
+  領: ["受け取ること。おさめている土地。"],
   異: ["ふつうと違うこと。別であること。"],
   遺: ["あとに残すこと。残されたもの。"],
   域: ["区切られた場所や範囲。"],
@@ -1968,7 +1985,16 @@ const supplementalWords = {
   胸: ["胸", "胸元"],
   囲: ["囲む", "周囲"],
   胃: ["胃", "胃腸"],
-  乳: ["乳", "牛乳"]
+  乳: ["乳", "牛乳"],
+  委: ["委員", "委ねる", "委員会"]
+};
+
+const supplementalWordExclusions = {
+  委: ["委しい"]
+};
+
+const supplementalReadingExclusions = {
+  委: ["くわしい"]
 };
 
 function supplementalKunWords(k, kun) {
@@ -1984,9 +2010,13 @@ function supplementalKunWords(k, kun) {
 
 function makeSupplementalKanjiEntry(k, grade) {
   const reading = supplementalReadings[k] || { on: "", kun: "" };
-  const yomi = [...new Set([...readingToSearchKana(reading.on), ...readingToSearchKana(reading.kun), k])];
+  const excludedReadings = supplementalReadingExclusions[k] || [];
+  const yomi = [...new Set([...readingToSearchKana(reading.on), ...readingToSearchKana(reading.kun), k])]
+    .filter((readingValue) => !excludedReadings.includes(readingValue));
   const meanings = supplementalKanjiMeanings[k] || [`小${grade}で習う漢字です。`, `「${k}」の読み方や使い方を例文といっしょに覚えます。`];
-  const words = [...new Set([...(supplementalWords[k] || []), ...supplementalKunWords(k, reading.kun), k])];
+  const excludedWords = supplementalWordExclusions[k] || [];
+  const words = [...new Set([...(supplementalWords[k] || []), ...supplementalKunWords(k, reading.kun), k])]
+    .filter((word) => !excludedWords.includes(word));
   return {
     k,
     on: reading.on,
