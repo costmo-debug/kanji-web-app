@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>かんじサポート デザインモック</title>
+  <style>
+    :root {
+      --board: #183f35;
+      --board-light: #285246;
+      --cream: #fffaf0;
+      --ink: #3e2d25;
+      --orange: #ff7a1a;
+      --yellow: #fff16a;
+      --chalk: #f6fff5;
+      font-family: "Yu Gothic UI", "Hiragino Sans", Meiryo, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,.04) 1px, transparent 1px),
+        var(--board);
+      background-size: 24px 24px;
+      color: var(--ink);
+    }
+
+    .phone {
+      width: min(390px, 100vw);
+      min-height: 844px;
+      background: var(--cream);
+      border: 5px solid #4b3a2e;
+      border-radius: 28px;
+      box-shadow: 0 24px 0 rgba(0,0,0,.24);
+      overflow: hidden;
+    }
+
+    .top {
+      padding: 14px 14px 10px;
+      background: var(--board-light);
+      color: #fff8bd;
+    }
+
+    .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .badge {
+      background: var(--yellow);
+      color: #523728;
+      border: 2px solid #4b3a2e;
+      border-radius: 8px;
+      padding: 2px 9px;
+      font-weight: 900;
+    }
+
+    .top p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: #e8f5ee;
+    }
+
+    .content {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .guide {
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 9px;
+      align-items: center;
+    }
+
+    .guide img {
+      width: 74px;
+      height: 74px;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 0 rgba(0,0,0,.18));
+    }
+
+    .bubble {
+      position: relative;
+      background: #fff;
+      border: 3px solid #4b3a2e;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .bubble::before {
+      content: "";
+      position: absolute;
+      left: -10px;
+      top: 28px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-left: 3px solid #4b3a2e;
+      border-bottom: 3px solid #4b3a2e;
+      transform: rotate(45deg);
+    }
+
+    .panel {
+      border: 3px solid #4b3a2e;
+      border-radius: 8px;
+      background: #fffdf2;
+      box-shadow: 0 7px 0 rgba(0,0,0,.18);
+      padding: 10px;
+    }
+
+    label {
+      display: block;
+      font-weight: 900;
+      margin-bottom: 5px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 48px;
+      border: 2px solid #d8cfae;
+      border-radius: 8px;
+      padding: 8px 10px;
+      resize: none;
+      font: inherit;
+      font-size: 17px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--orange);
+      color: #fff;
+      font-weight: 900;
+      box-shadow: 0 5px 0 #9f420d;
+      font: inherit;
+    }
+
+    .board {
+      background: var(--board-light);
+      border: 4px solid #6b4b2e;
+      border-radius: 8px;
+      padding: 10px;
+      color: var(--chalk);
+    }
+
+    .board-title {
+      color: #fff7ca;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .word-option {
+      display: grid;
+      grid-template-columns: 108px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      border: 2px dashed rgba(255,255,255,.65);
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 7px;
+    }
+
+    .word-option.selected {
+      background: var(--yellow);
+      color: #4b2d00;
+      border-color: var(--orange);
+    }
+
+    .check {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border: 2px solid #4b3a2e;
+      border-radius: 999px;
+      background: var(--orange);
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .word {
+      font-size: 26px;
+      font-weight: 900;
+    }
+
+    .word rt {
+      font-size: 10px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .card {
+      display: grid;
+      place-items: center;
+      gap: 2px;
+      min-height: 108px;
+      border: 3px solid #4b3a2e;
+      border-radius: 8px;
+      background: #fff8d9;
+      box-shadow: 0 5px 0 rgba(0,0,0,.16);
+    }
+
+    .card b {
+      font-size: 44px;
+      color: var(--orange);
+      line-height: 1;
+    }
+
+    .card span {
+      font-size: 12px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .tab {
+      background: #fff6c5;
+      color: #523728;
+      border: 2px solid #4b3a2e;
+      box-shadow: 0 4px 0 rgba(0,0,0,.2);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top">
+      <div class="title">
+        <h1>かんじサポート</h1>
+        <span class="badge">小2</span>
+      </div>
+      <p>スーパー猫ちゃんと、毎日ちょっと漢字れんしゅう</p>
+    </div>
+    <div class="content">
+      <div class="guide">
+        <img src="assets/super-cat.png" alt="スーパー猫ちゃん">
+        <div class="bubble">「公園」をえらんだよ。下のカードから見たい漢字を選んでね。</div>
+      </div>
+
+      <div class="panel">
+        <label>しらべたいことば</label>
+        <textarea>公園を走る</textarea>
+        <div class="actions">
+          <button>見つける</button>
+          <button>話す</button>
+        </div>
+      </div>
+
+      <div class="board">
+        <div class="board-title">「こうえん」の候補</div>
+        <div class="word-option selected">
+          <div class="word"><ruby>公<rt>こう</rt></ruby><ruby>園<rt>えん</rt></ruby></div>
+          <div>この言葉をえらびました</div>
+          <div class="check">✓</div>
+        </div>
+        <div class="word-option">
+          <div class="word"><ruby>公<rt>こう</rt></ruby><ruby>演<rt>えん</rt></ruby></div>
+          <div>この言葉をえらぶ</div>
+          <div></div>
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card"><b>公</b><span>公のお手本</span></div>
+        <div class="card"><b>園</b><span>園のお手本</span></div>
+        <div class="card"><b>走</b><span>走のお手本</span></div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab">さがす</button>
+        <button class="tab">お手本</button>
+        <button class="tab">しゃしん</button>
+        <button class="tab">クイズ</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

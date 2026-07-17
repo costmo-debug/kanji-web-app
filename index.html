@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2f7d6d">
+  <title>かんじサポート</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="title-row">
+          <h1>かんじサポート</h1>
+          <span class="grade-badge">小2〜小4</span>
+        </div>
+        <p>スーパー猫ちゃんと、毎日ちょっと漢字れんしゅう</p>
+      </div>
+      <button id="installHelpButton" class="icon-button" type="button" aria-label="ホームに追加のヒント">＋</button>
+    </header>
+
+    <main>
+      <section class="search-panel" aria-label="かんじをさがす">
+        <div class="hero-guide">
+          <img src="./assets/super-cat.png" alt="スーパー猫ちゃん" class="super-cat">
+          <div class="cat-bubble" id="catBubble">ぼくに文を話してね。書ける漢字をいっしょに見つけよう！</div>
+        </div>
+        <div class="sentence-box">
+          <label for="sentenceInput">しらべたいことば</label>
+          <textarea id="sentenceInput" rows="2" placeholder="例: こうえんをはしる"></textarea>
+        </div>
+        <div class="search-row">
+          <button id="analyzeSentenceButton" class="primary-button" type="button">見つける</button>
+          <button id="voiceButton" class="round-button" type="button" aria-label="音声でさがす">話す</button>
+        </div>
+        <p id="voiceStatus" class="status-text" aria-live="polite">文章でも、文字でもさがせます。Chromeで音声入力も試せます。</p>
+        <div id="highlightedSentence" class="highlighted-sentence" aria-live="polite"></div>
+        <div id="sentenceCandidates" class="sentence-candidates" aria-live="polite"></div>
+      </section>
+
+      <nav class="mode-tabs bottom-tabs" aria-label="メニュー">
+        <button class="tab active" type="button" data-view="searchView">さがす</button>
+        <button class="tab" type="button" data-view="listView">漢字一覧</button>
+        <button class="tab" type="button" data-view="quizView">クイズ</button>
+      </nav>
+
+      <section id="searchView" class="view active" aria-label="探す"></section>
+
+      <section id="listView" class="view" aria-label="漢字一覧">
+        <article class="list-card">
+          <div class="panel-title">
+            <h2>漢字一覧</h2>
+            <span>小2〜小4</span>
+          </div>
+          <p class="status-text">小2から小4までの漢字を一覧で見られます。気になる漢字を押すと、お手本に進みます。</p>
+          <div class="list-search">
+            <label for="listSearchInput">一覧からさがす</label>
+            <input id="listSearchInput" type="search" autocomplete="off" placeholder="例: 走る、はしる、走">
+            <button id="listVoiceButton" class="round-button" type="button">話す</button>
+          </div>
+          <p id="listStatus" class="status-text" aria-live="polite">文字でも、音声でもさがせます。</p>
+        </article>
+        <div id="resultList" class="result-list"></div>
+      </section>
+
+      <section id="traceView" class="view" aria-label="なぞり練習">
+        <div class="study-tabs" aria-label="学習メニュー">
+          <button class="study-tab active" type="button" data-study-panel="modelPanel">お手本</button>
+          <button class="study-tab" type="button" data-study-panel="detailPanel">説明</button>
+        </div>
+        <div class="practice-layout">
+          <article id="detailPanel" class="kanji-detail study-panel">
+            <div class="selected-card">
+              <div id="bigKanji" class="big-kanji">曜</div>
+              <div>
+                <p id="selectedWord" class="selected-word"></p>
+                <p id="selectedReadings" class="readings">ヨウ</p>
+                <p id="selectedRuby" class="ruby-line"></p>
+              </div>
+            </div>
+            <div id="originalSentenceBox" class="original-sentence"></div>
+            <div class="info-grid">
+              <div class="meaning-card">
+                <h2>意味</h2>
+                <p id="selectedMeaning">一週間の日の名に使う字</p>
+              </div>
+              <div>
+                <h2>訓読みのれい</h2>
+                <p id="selectedKunExample">本を読む。</p>
+              </div>
+              <div>
+                <h2>音読みのれい</h2>
+                <p id="selectedOnExample">読書をする。</p>
+              </div>
+              <div>
+                <h2>じゅくご</h2>
+                <p id="selectedWords">曜日、日曜</p>
+              </div>
+            </div>
+          </article>
+
+          <article id="modelPanel" class="trace-card study-panel active">
+            <div class="panel-title">
+              <h2>お手本</h2>
+              <span>教科書体</span>
+            </div>
+            <div class="trace-toolbar">
+              <button id="showModelButton" type="button">お手本</button>
+              <button id="playStrokeButton" type="button">書き順を表示</button>
+            </div>
+            <div class="trace-board model-mode font-kyokasho" id="traceBoard">
+              <div id="traceGuide" class="trace-guide">曜</div>
+              <svg id="strokeSvg" class="stroke-svg" viewBox="0 0 109 109" aria-label="書き順アニメーション"></svg>
+              <canvas id="traceCanvas" width="520" height="520" aria-label="なぞり練習のキャンバス"></canvas>
+            </div>
+            <p id="strokeStatus" class="status-text"></p>
+            <div id="strokeTip" class="stroke-tip" hidden></div>
+            <div class="writing-tip model-writing-tip">
+              <h2>きれいに書くポイント</h2>
+              <p id="writingTipText">字の中心をそろえて、ゆっくり書こう。</p>
+            </div>
+            <p class="license-note">書き順データ: KanjiVG / CC BY-SA 3.0</p>
+            <button id="nextCandidateButton" class="primary-button next-candidate" type="button">つぎの かんじへ</button>
+          </article>
+        </div>
+      </section>
+
+      <section id="cameraView" class="view" aria-label="写真でさがす">
+        <article class="camera-card">
+          <div class="camera-head">
+            <div>
+              <h2>しゃしんでさがす</h2>
+              <p>プリントやノートを写して、気になる漢字を見ながら入力できます。</p>
+            </div>
+            <label class="camera-button">
+              とる
+              <input id="photoInput" type="file" accept="image/*" capture="environment">
+            </label>
+          </div>
+          <div class="photo-preview" id="photoPreview">
+            <span>ここに写真が出ます</span>
+          </div>
+          <div class="camera-search">
+            <label for="cameraSearchInput">写真の中の漢字・よみを入れる</label>
+            <div class="search-row">
+              <input id="cameraSearchInput" type="search" autocomplete="off" placeholder="例: 走る、はしる、走">
+              <button id="cameraSearchButton" class="round-button" type="button">さがす</button>
+            </div>
+          </div>
+          <p class="status-text">本格的な自動読み取りは次の段階で追加します。まずは写真を見ながらすぐ検索できます。</p>
+        </article>
+      </section>
+
+      <section id="quizView" class="view" aria-label="漢字選択クイズ">
+        <article class="quiz-card">
+          <div id="answerOverlay" class="answer-overlay" aria-hidden="true"></div>
+          <div id="fireworkOverlay" class="firework-overlay" aria-hidden="true"></div>
+          <div class="sticker-book">
+            <span>シール</span>
+            <div id="stickerSlots" class="sticker-slots" aria-label="正解シール"></div>
+            <span id="stickerGoal" class="sticker-goal">10こで花火</span>
+          </div>
+          <p id="quizLabel" class="quiz-label">このよみの かんじは？</p>
+          <div id="quizPrompt" class="quiz-prompt">はしる</div>
+          <div id="quizOptions" class="quiz-options"></div>
+          <p id="quizMessage" class="quiz-message" aria-live="polite"></p>
+          <button id="nextQuizButton" class="primary-button" type="button">つぎのもんだい</button>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="installDialog">
+    <h2>スマホでアプリみたいに使う</h2>
+    <p>Chromeなら右上または下のメニューから「ホーム画面に追加」を選ぶと、アイコンから開けます。</p>
+    <button id="closeInstallDialog" class="primary-button" type="button">わかった</button>
+  </dialog>
+
+  <script src="./app.js"></script>
+</body>
+</html>
