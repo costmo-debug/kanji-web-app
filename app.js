@@ -228,6 +228,7 @@ const selectedAlternativeByReading = {};
 let sentenceInputTimer = 0;
 let traceParentView = "searchView";
 let selectedPhotoFile = null;
+let selectedPhotoFocus = { x: 0.5, y: 0.58 };
 
 function clearSelectedAlternatives() {
   Object.keys(selectedAlternativeByReading).forEach((key) => {
@@ -4070,12 +4071,26 @@ function binarizeCanvas(canvas) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-async function makeCenterCropForOcr(file) {
+function setPhotoFocusFromEvent(event) {
+  if (!selectedPhotoFile) return;
+  const rect = els.photoPreview.getBoundingClientRect();
+  const x = Math.min(0.95, Math.max(0.05, (event.clientX - rect.left) / rect.width));
+  const y = Math.min(0.95, Math.max(0.05, (event.clientY - rect.top) / rect.height));
+  selectedPhotoFocus = { x, y };
+  els.photoPreview.style.setProperty("--focus-x", `${x * 100}%`);
+  els.photoPreview.style.setProperty("--focus-y", `${y * 100}%`);
+  els.photoPreview.classList.add("has-focus");
+  setPhotoStatus("読みたい場所を選びました。「写真を読む」を押してください。");
+}
+
+async function makeFocusCropForOcr(file) {
   const image = await imageSourceFromFile(file);
-  const cropWidth = image.naturalWidth * 0.56;
-  const cropHeight = image.naturalHeight * 0.58;
-  const cropX = (image.naturalWidth - cropWidth) / 2;
-  const cropY = image.naturalHeight * 0.22;
+  const cropWidth = image.naturalWidth * 0.34;
+  const cropHeight = image.naturalHeight * 0.28;
+  const centerX = image.naturalWidth * selectedPhotoFocus.x;
+  const centerY = image.naturalHeight * selectedPhotoFocus.y;
+  const cropX = Math.max(0, Math.min(image.naturalWidth - cropWidth, centerX - cropWidth / 2));
+  const cropY = Math.max(0, Math.min(image.naturalHeight - cropHeight, centerY - cropHeight / 2));
   const canvas = document.createElement("canvas");
   const targetWidth = 900;
   const scale = targetWidth / cropWidth;
@@ -4086,6 +4101,14 @@ async function makeCenterCropForOcr(file) {
   ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
   binarizeCanvas(canvas);
   return canvasToBlob(canvas);
+}
+
+async function makeCenterCropForOcr(file) {
+  const previousFocus = selectedPhotoFocus;
+  selectedPhotoFocus = { x: 0.5, y: 0.58 };
+  const blob = await makeFocusCropForOcr(file);
+  selectedPhotoFocus = previousFocus;
+  return blob;
 }
 
 function usefulOcrKanjiCount(text) {
@@ -4123,20 +4146,36 @@ async function readPhotoText() {
       });
     }
     let text = "";
+    let focusText = "";
     let centerText = "";
     let fullText = "";
     try {
-      setPhotoStatus("写真のまん中を読んでいます。");
+      setPhotoStatus("選んだ場所を読んでいます。");
+      const focusCrop = await makeFocusCropForOcr(selectedPhotoFile);
+      const focusResult = await worker.recognize(focusCrop || selectedPhotoFile);
+      focusText = cleanOcrText(focusResult.data.text);
+    } catch (error) {
+      focusText = "";
+    }
+
+    if (usefulOcrKanjiCount(focusText)) {
+      text = focusText;
+    } else {
+      try {
+        setPhotoStatus("写真のまん中を読んでいます。");
       const centerCrop = await makeCenterCropForOcr(selectedPhotoFile);
       const centerResult = await worker.recognize(centerCrop || selectedPhotoFile);
       centerText = cleanOcrText(centerResult.data.text);
-    } catch (error) {
-      centerText = "";
+      } catch (error) {
+        centerText = "";
+      }
     }
 
-    if (usefulOcrKanjiCount(centerText)) {
+    if (!text && usefulOcrKanjiCount(centerText)) {
       text = centerText;
-    } else {
+    }
+
+    if (!text) {
       setPhotoStatus("写真全体を読んでいます。");
       const fullResult = await worker.recognize(selectedPhotoFile);
       fullText = cleanOcrText(fullResult.data.text);
@@ -4218,12 +4257,17 @@ els.photoInput.addEventListener("change", () => {
   const file = els.photoInput.files && els.photoInput.files[0];
   if (!file) return;
   selectedPhotoFile = file;
+  selectedPhotoFocus = { x: 0.5, y: 0.58 };
   const url = URL.createObjectURL(file);
   els.photoPreview.innerHTML = `<img src="${url}" alt="選んだ写真">`;
+  els.photoPreview.style.setProperty("--focus-x", "50%");
+  els.photoPreview.style.setProperty("--focus-y", "58%");
+  els.photoPreview.classList.add("has-focus");
   els.cameraSearchInput.value = "";
-  setPhotoStatus("写真を選びました。「写真を読む」を押してください。");
-  setCatMessage("写真を選べたよ。文字を読むボタンを押してね。");
+  setPhotoStatus("写真を選びました。読みたい漢字のあたりをタップしてから「写真を読む」を押してください。");
+  setCatMessage("写真を選べたよ。読みたいところをタップしてね。");
 });
+els.photoPreview.addEventListener("pointerdown", setPhotoFocusFromEvent);
 els.photoOcrButton.addEventListener("click", readPhotoText);
 els.cameraSearchButton.addEventListener("click", () => {
   showPhotoCandidates(els.cameraSearchInput.value);
