@@ -1467,7 +1467,8 @@ body {
 
   body[data-view="traceView"] .app-shell {
     padding-top: 4px;
-    padding-bottom: 76px;
+    padding-bottom: 8px;
+    min-height: 100svh;
   }
 
   .topbar {
@@ -1475,7 +1476,7 @@ body {
   }
 
   body[data-view="traceView"] .topbar {
-    padding: 3px 2px 5px;
+    display: none;
   }
 
   .topbar h1 {
@@ -1608,6 +1609,10 @@ body {
     box-shadow: 0 -4px 18px rgba(0,0,0,0.22);
   }
 
+  body[data-view="traceView"] .mode-tabs {
+    display: none;
+  }
+
   .tab {
     min-height: 48px;
     border-width: 2px;
@@ -1617,6 +1622,8 @@ body {
     position: sticky;
     top: 0;
     z-index: 12;
+    grid-template-columns: 0.85fr 1.5fr;
+    align-items: stretch;
     gap: 6px;
     margin: 0 0 8px;
     padding: 4px 0 6px;
@@ -1630,7 +1637,7 @@ body {
 
   .trace-back-button {
     min-height: 38px;
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .study-tab {
@@ -1640,7 +1647,7 @@ body {
 
   body[data-view="traceView"] .study-tab {
     min-height: 38px;
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .result-list,
@@ -1702,8 +1709,25 @@ body {
     gap: 8px;
   }
 
-  body[data-view="traceView"] .trace-card {
-    padding: 8px;
+  body[data-view="traceView"] .practice-layout {
+    gap: 0;
+  }
+
+  body[data-view="traceView"] .study-panel.active {
+    max-height: calc(100svh - 58px);
+    overflow: hidden;
+  }
+
+  body[data-view="traceView"] .trace-card.active {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    padding: 7px;
+  }
+
+  body[data-view="traceView"] .kanji-detail.active {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    padding: 7px;
   }
 
   body[data-view="traceView"] .panel-title {
@@ -1711,42 +1735,67 @@ body {
   }
 
   .selected-card {
-    grid-template-columns: 82px 1fr;
-    gap: 10px;
+    grid-template-columns: 66px 1fr;
+    gap: 8px;
   }
 
   .big-kanji {
-    font-size: 58px;
+    font-size: 48px;
   }
 
   .selected-word {
-    font-size: 24px;
+    font-size: 20px;
+    line-height: 1.2;
   }
 
   .readings {
-    font-size: 15px;
+    font-size: 12px;
   }
 
   .ruby-line,
   .meaning {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .info-grid {
-    gap: 8px;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-top: 6px;
+    min-height: 0;
   }
 
   .meaning-card {
-    padding: 8px 10px;
+    grid-column: 1 / -1;
+    padding: 6px 8px;
   }
 
   .info-grid p,
   .writing-tip p {
-    font-size: 14px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .info-grid h2 {
+    font-size: 12px;
+  }
+
+  .meaning-list {
+    margin-top: 2px;
+    padding-left: 1.05em;
+  }
+
+  .meaning-list li + li {
+    margin-top: 1px;
+  }
+
+  .original-sentence.active {
+    margin-top: 5px;
+    padding: 5px 7px;
+    font-size: 12px;
   }
 
   .writing-tip {
-    padding: 8px 10px;
+    padding: 6px 8px;
   }
 
   .panel-title h2 {
@@ -1772,7 +1821,7 @@ body {
   }
 
   body[data-view="traceView"] .trace-toolbar {
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
 
   body[data-view="traceView"] .trace-toolbar button {
@@ -1786,7 +1835,7 @@ body {
   }
 
   body[data-view="traceView"] .trace-board {
-    width: min(100%, 286px);
+    width: min(100%, 48svh, 292px);
   }
 
   .trace-board.model-mode .trace-guide,
@@ -1796,7 +1845,7 @@ body {
 
   body[data-view="traceView"] .trace-board.model-mode .trace-guide,
   body[data-view="traceView"] .trace-board.stroke-mode .trace-guide {
-    font-size: min(60vw, 205px);
+    font-size: min(54vw, 38svh, 190px);
   }
 
   .stroke-tip {
@@ -1816,8 +1865,13 @@ body {
     margin-top: 4px;
   }
 
+  body[data-view="traceView"] #strokeStatus:empty,
+  body[data-view="traceView"] #strokeTip[hidden] {
+    display: none;
+  }
+
   body[data-view="traceView"] .model-writing-tip {
-    margin-top: 6px;
+    margin-top: 5px;
     padding: 6px 8px;
   }
 

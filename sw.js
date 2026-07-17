@@ -1,4 +1,4 @@
-const CACHE_NAME = "kanji-support-v70";
+const CACHE_NAME = "kanji-support-v71";
 const ASSETS = [
   "./",
   "./index.html",
