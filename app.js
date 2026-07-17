@@ -2263,6 +2263,42 @@ function rubyKnownText(text) {
   return working;
 }
 
+const wordExampleSentences = {
+  一つ: "一つずつ数えます。",
+  学校: "学校へ行きます。",
+  先生: "先生に聞きます。",
+  公園: "公園で遊びます。",
+  公共: "公共の場所を大切にします。",
+  校庭: "校庭を走ります。",
+  友だち: "友だちと遊びます。",
+  手紙: "手紙を書きます。",
+  読書: "読書をします。",
+  時間: "時間を守ります。",
+  漢字: "漢字を練習します。",
+  家族: "家族と話します。",
+  安心: "安心して眠ります。",
+  音楽: "音楽を聞きます。",
+  図書館: "図書館で本を読みます。",
+  勉強: "勉強を続けます。",
+  文章: "文章を読みます。",
+  給食: "給食を食べます。",
+  日記: "日記を書きます。",
+  元気: "元気にあいさつします。"
+};
+
+function exampleSentenceForWord(word, item) {
+  if (wordExampleSentences[word]) return wordExampleSentences[word];
+  if (/[ぁ-ん]$/.test(word) && word.includes(item.k)) return `${word}。`;
+  if (word.length === 1) return `${word}を大きく書きます。`;
+  return `${word}を使った文を読みます。`;
+}
+
+function rubyExampleText(text, item, word) {
+  const known = rubyKnownText(text);
+  if (!word || rubyDictionary[word]) return known;
+  return known.replace(escapeHtml(word), rubyWordForList(word, item));
+}
+
 function kanaFromKatakana(text) {
   return (text || "").replace(/[ァ-ン]/g, (char) =>
     String.fromCharCode(char.charCodeAt(0) - 0x60)
@@ -2302,7 +2338,9 @@ function readingExamples(item) {
   if (item.kunExample || item.onExample) {
     return {
       kunText: item.kunExample || `${item.k}の訓読みを使った言葉を覚えよう。`,
-      onText: item.onExample || `${item.k}の音読みを使った言葉を覚えよう。`
+      onText: item.onExample || `${item.k}の音読みを使った言葉を覚えよう。`,
+      kunWord: "",
+      onWord: ""
     };
   }
   const kunWord = item.words.find((word) => word.includes(item.k) && /[ぁ-ん]/.test(word))
@@ -2313,12 +2351,12 @@ function readingExamples(item) {
   const kunText = item.example && kunWord && item.example.includes(kunWord)
     ? item.example
     : kunWord
-      ? `${kunWord}を使って文を書こう。`
+      ? exampleSentenceForWord(kunWord, item)
       : `${item.k}の訓読みは、学校で出てきた言葉といっしょに覚えよう。`;
   const onText = onWord
-    ? `${onWord}という言葉で使います。`
+    ? exampleSentenceForWord(onWord, item)
     : `${item.k}の音読みを使った言葉を覚えよう。`;
-  return { kunText, onText };
+  return { kunText, onText, kunWord, onWord };
 }
 
 function rubyPartsForDisplayWord(display, item) {
@@ -2586,8 +2624,8 @@ function selectKanji(item, displayWord = item.words.find((word) => word.includes
   els.selectedRuby.innerHTML = "";
   els.selectedMeaning.innerHTML = renderMeanings(item);
   const examples = readingExamples(item);
-  els.selectedKunExample.innerHTML = rubyKnownText(examples.kunText);
-  els.selectedOnExample.innerHTML = rubyKnownText(examples.onText);
+  els.selectedKunExample.innerHTML = rubyExampleText(examples.kunText, item, examples.kunWord);
+  els.selectedOnExample.innerHTML = rubyExampleText(examples.onText, item, examples.onWord);
   els.selectedWords.innerHTML = item.words.map((word) => rubyWordForList(word, item)).join("、");
   els.writingTipText.textContent = writingTips[item.k] || defaultWritingTip;
   els.traceGuide.textContent = item.k;
