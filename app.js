@@ -165,6 +165,7 @@ const els = {
   resultList: document.querySelector("#resultList"),
   listSearchInput: document.querySelector("#listSearchInput"),
   listStatus: document.querySelector("#listStatus"),
+  gradeScopeLabel: document.querySelector("#gradeScopeLabel"),
   voiceStatus: document.querySelector("#voiceStatus"),
   catBubble: document.querySelector("#catBubble"),
   sentenceInput: document.querySelector("#sentenceInput"),
@@ -219,6 +220,7 @@ let drawing = false;
 let strokeTimers = [];
 let correctStickers = Number(localStorage.getItem("kanji-support-stickers") || "0");
 const STICKERS_PER_PAGE = 10;
+let activeGradeMax = Number(localStorage.getItem("kanji-support-grade-max") || "6");
 const selectedAlternativeByReading = {};
 let sentenceInputTimer = 0;
 let traceParentView = "searchView";
@@ -2123,20 +2125,39 @@ function matches(item, query) {
   ].some((value) => normalize(value).includes(q));
 }
 
+function gradeOf(item) {
+  return item.grade || 2;
+}
+
+function activeKanjiData() {
+  return kanjiData.filter((item) => gradeOf(item) <= activeGradeMax);
+}
+
+function gradeScopeText() {
+  return activeGradeMax === 1 ? "小1" : `小1〜小${activeGradeMax}`;
+}
+
+function updateGradeFilterUI() {
+  if (els.gradeScopeLabel) els.gradeScopeLabel.textContent = gradeScopeText();
+  document.querySelectorAll("[data-grade-max]").forEach((button) => {
+    button.classList.toggle("active", Number(button.dataset.gradeMax) === activeGradeMax);
+  });
+}
+
 function renderResults() {
   const query = els.listSearchInput.value;
-  const filtered = kanjiData.filter((item) => matches(item, query));
+  const filtered = activeKanjiData().filter((item) => matches(item, query));
   els.resultList.innerHTML = "";
 
   if (!filtered.length) {
     els.resultList.innerHTML = `<p class="status-text">見つかりませんでした。よみを短くして試してみてください。</p>`;
-    els.listStatus.textContent = `「${query}」に近い漢字が見つかりませんでした。`;
+    els.listStatus.textContent = `${gradeScopeText()}の中では「${query}」に近い漢字が見つかりませんでした。`;
     return;
   }
 
   els.listStatus.textContent = query.trim()
-    ? `「${query}」で ${filtered.length} 件見つかりました。`
-    : "文字でも、音声でもさがせます。";
+    ? `${gradeScopeText()}の中で「${query}」が ${filtered.length} 件見つかりました。`
+    : `${gradeScopeText()}の漢字を表示しています。`;
 
   for (const item of filtered) {
     const button = document.createElement("button");
@@ -2365,6 +2386,7 @@ function sentenceForms(item) {
 function candidatesFromSentence(text) {
   const q = normalize(text);
   if (!q) return [];
+  const scopedKanji = activeKanjiData();
   const hits = [];
   const activeAlternativeGroups = [];
 
@@ -2373,7 +2395,7 @@ function candidatesFromSentence(text) {
     if (!matched) continue;
     const options = group.options.map((option) => ({
       ...option,
-      items: option.kanji.map((k) => kanjiData.find((candidate) => candidate.k === k)).filter(Boolean)
+      items: option.kanji.map((k) => scopedKanji.find((candidate) => candidate.k === k)).filter(Boolean)
     }));
     activeAlternativeGroups.push({
       reading: group.reading,
@@ -2408,7 +2430,7 @@ function candidatesFromSentence(text) {
     const matched = entry.spoken.find((word) => q.includes(normalize(word)));
     if (!matched) continue;
     entry.kanji.forEach((kanji, index) => {
-      const item = kanjiData.find((candidate) => candidate.k === kanji);
+      const item = scopedKanji.find((candidate) => candidate.k === kanji);
       if (!item) return;
       hits.push({
         item,
@@ -2423,7 +2445,7 @@ function candidatesFromSentence(text) {
     });
   }
 
-  const genericHits = kanjiData
+  const genericHits = scopedKanji
     .map((item) => {
       const hit = sentenceForms(item)
         .sort((a, b) => normalize(b.match).length - normalize(a.match).length)
@@ -2505,7 +2527,7 @@ function renderSentenceCandidates() {
         button.className = `candidate-option${option.items.length ? "" : " unavailable"}${isSelected ? " selected-word-option" : ""}`;
         const statusText = option.items.length
           ? (isSelected ? "この言葉の漢字を下に表示中" : "この言葉をえらぶ")
-          : "小2の漢字ではないため未対応";
+          : `${gradeScopeText()}の漢字ではないため未対応`;
         button.innerHTML = `<span class="candidate-word">${rubyPhrase(option.display, option.reading)}</span><span>${statusText}</span>`;
 
         if (!option.items.length) {
@@ -3036,10 +3058,11 @@ function quizPromptHtml(quiz) {
 }
 
 function makeReadingQuiz() {
-  const answer = kanjiData[Math.floor(Math.random() * kanjiData.length)];
+  const quizPool = activeKanjiData();
+  const answer = quizPool[Math.floor(Math.random() * quizPool.length)];
   const options = [answer.k];
   while (options.length < 4) {
-    const candidate = kanjiData[Math.floor(Math.random() * kanjiData.length)].k;
+    const candidate = quizPool[Math.floor(Math.random() * quizPool.length)].k;
     if (!options.includes(candidate)) options.push(candidate);
   }
   return {
@@ -3151,6 +3174,18 @@ document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => switchView(tab.dataset.view));
 });
 
+document.querySelectorAll("[data-grade-max]").forEach((button) => {
+  button.addEventListener("click", () => {
+    activeGradeMax = Number(button.dataset.gradeMax);
+    localStorage.setItem("kanji-support-grade-max", String(activeGradeMax));
+    updateGradeFilterUI();
+    renderResults();
+    if (els.sentenceInput.value.trim()) renderSentenceCandidates();
+    makeQuiz();
+    setCatMessage(`${gradeScopeText()}までの漢字にしたよ。今の学年に合わせて練習しよう！`);
+  });
+});
+
 document.querySelectorAll(".study-tab").forEach((tab) => {
   tab.addEventListener("click", () => switchStudyPanel(tab.dataset.studyPanel));
 });
@@ -3201,6 +3236,7 @@ document.querySelector("#installHelpButton").addEventListener("click", () => els
 document.querySelector("#closeInstallDialog").addEventListener("click", () => els.installDialog.close());
 
 window.addEventListener("resize", clearCanvas);
+updateGradeFilterUI();
 selectKanji(selectedKanji);
 renderResults();
 resizeCanvas();
