@@ -3983,6 +3983,66 @@ function showPhotoCandidates(text) {
   switchView("searchView");
 }
 
+function extractOcrKanjiItems(text) {
+  const scopedKanji = activeKanjiData();
+  const byKanji = new Map(scopedKanji.map((item) => [item.k, item]));
+  const seen = new Set();
+  const items = [];
+  [...String(text || "")].forEach((char) => {
+    if (!/[\u3400-\u9fff]/.test(char) || seen.has(char)) return;
+    const item = byKanji.get(char);
+    if (!item) return;
+    seen.add(char);
+    items.push(item);
+  });
+  return items.slice(0, 12);
+}
+
+function renderPhotoKanjiCandidates(text) {
+  const items = extractOcrKanjiItems(text);
+  currentSentence = "";
+  currentCandidateHits = items.map((item) => ({
+    item,
+    match: item.k,
+    display: item.k,
+    reading: readingForRuby(item)
+  }));
+  els.highlightedSentence.innerHTML = items.length
+    ? `<span class="hit-mark">写真から見つけた漢字</span>`
+    : "";
+  els.sentenceCandidates.innerHTML = "";
+
+  if (!items.length) {
+    els.sentenceCandidates.innerHTML = `<p class="status-text">漢字を見つけられませんでした。読み取った文字を直すか、漢字を1文字入れてください。</p>`;
+    setCatMessage("写真から漢字を見つけられなかったよ。下の文字を直してもう一回ためしてね。");
+    return;
+  }
+
+  items.forEach((item, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "candidate-chip";
+    button.innerHTML = `
+      <span class="candidate-word">${rubyWord(item.k, item)}</span>
+      <span class="target-action"><b>${item.k}</b> のお手本を見る</span>
+    `;
+    button.addEventListener("click", () => {
+      selectedCandidateIndex = index;
+      selectKanji(item, item.k, readingForRuby(item));
+      traceParentView = "searchView";
+      switchView("traceView");
+    });
+    els.sentenceCandidates.appendChild(button);
+  });
+  setCatMessage("写真から見つけた漢字だけ出したよ。見たい漢字を選んでね。");
+}
+
+function showPhotoOcrCandidates(text) {
+  els.sentenceInput.value = cleanOcrText(text);
+  switchView("searchView");
+  renderPhotoKanjiCandidates(text);
+}
+
 async function readPhotoText() {
   if (!selectedPhotoFile) {
     setPhotoStatus("先に写真を選んでください。");
@@ -4023,7 +4083,7 @@ async function readPhotoText() {
     els.cameraSearchInput.value = text;
     setPhotoStatus("読み取った文字から候補を出しました。違う時は文字を直して「候補を出す」を押してください。");
     setCatMessage("写真から候補を出したよ。見たい漢字を選んでね。");
-    showPhotoCandidates(text);
+    showPhotoOcrCandidates(text);
   } catch (error) {
     setPhotoStatus("写真の読み取りに失敗しました。文字が大きく写るように撮り直すか、手で入力してください。");
     setCatMessage("写真が少し読みにくかったみたい。手入力でも続けられるよ。");
