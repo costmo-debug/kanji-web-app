@@ -4043,6 +4043,55 @@ function showPhotoOcrCandidates(text) {
   renderPhotoKanjiCandidates(text);
 }
 
+function imageSourceFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = URL.createObjectURL(file);
+  });
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+}
+
+function binarizeCanvas(canvas) {
+  const ctx = canvas.getContext("2d");
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  for (let index = 0; index < data.length; index += 4) {
+    const brightness = data[index] * 0.299 + data[index + 1] * 0.587 + data[index + 2] * 0.114;
+    const value = brightness < 168 ? 0 : 255;
+    data[index] = value;
+    data[index + 1] = value;
+    data[index + 2] = value;
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+async function makeCenterCropForOcr(file) {
+  const image = await imageSourceFromFile(file);
+  const cropWidth = image.naturalWidth * 0.56;
+  const cropHeight = image.naturalHeight * 0.58;
+  const cropX = (image.naturalWidth - cropWidth) / 2;
+  const cropY = image.naturalHeight * 0.22;
+  const canvas = document.createElement("canvas");
+  const targetWidth = 900;
+  const scale = targetWidth / cropWidth;
+  canvas.width = targetWidth;
+  canvas.height = Math.round(cropHeight * scale);
+  const ctx = canvas.getContext("2d");
+  ctx.filter = "grayscale(1) contrast(1.35)";
+  ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+  binarizeCanvas(canvas);
+  return canvasToBlob(canvas);
+}
+
+function usefulOcrKanjiCount(text) {
+  return extractOcrKanjiItems(text).length;
+}
+
 async function readPhotoText() {
   if (!selectedPhotoFile) {
     setPhotoStatus("先に写真を選んでください。");
@@ -4073,8 +4122,27 @@ async function readPhotoText() {
         tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT
       });
     }
-    const result = await worker.recognize(selectedPhotoFile);
-    const text = cleanOcrText(result.data.text);
+    let text = "";
+    let centerText = "";
+    let fullText = "";
+    try {
+      setPhotoStatus("写真のまん中を読んでいます。");
+      const centerCrop = await makeCenterCropForOcr(selectedPhotoFile);
+      const centerResult = await worker.recognize(centerCrop || selectedPhotoFile);
+      centerText = cleanOcrText(centerResult.data.text);
+    } catch (error) {
+      centerText = "";
+    }
+
+    if (usefulOcrKanjiCount(centerText)) {
+      text = centerText;
+    } else {
+      setPhotoStatus("写真全体を読んでいます。");
+      const fullResult = await worker.recognize(selectedPhotoFile);
+      fullText = cleanOcrText(fullResult.data.text);
+      text = fullText;
+    }
+
     if (!text) {
       setPhotoStatus("文字を見つけられませんでした。明るく大きく撮るか、下の欄に入力してください。");
       setCatMessage("うまく読めなかったみたい。近づいて、明るく撮ると読みやすいよ。");
