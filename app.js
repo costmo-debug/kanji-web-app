@@ -3252,6 +3252,9 @@ function switchView(id) {
   if (id === "searchView" || id === "listView") {
     traceParentView = id;
   }
+  if (els.traceBackButton) {
+    els.traceBackButton.textContent = traceParentView === "listView" ? "← 漢字一覧へ" : "← さがすへ";
+  }
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === id));
   const activeNav = id === "traceView" ? traceParentView : id;
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === activeNav));
@@ -4062,8 +4065,9 @@ els.traceCanvas.addEventListener("pointermove", draw);
 els.traceCanvas.addEventListener("pointerup", stopDraw);
 els.traceCanvas.addEventListener("pointerleave", stopDraw);
 els.traceBackButton.addEventListener("click", () => {
-  switchView(traceParentView || "searchView");
-  setCatMessage("さがす画面にもどったよ。次のことばも入れてみてね。");
+  const targetView = traceParentView || "searchView";
+  switchView(targetView);
+  setCatMessage(targetView === "listView" ? "漢字一覧にもどったよ。ほかの漢字も見てみよう。" : "さがす画面にもどったよ。次のことばも入れてみてね。");
 });
 els.nextQuizButton.addEventListener("click", makeQuiz);
 els.nextCandidateButton.addEventListener("click", goToNextCandidate);
