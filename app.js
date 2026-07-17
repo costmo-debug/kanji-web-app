@@ -2452,10 +2452,12 @@ function updateGradeFilterUI() {
 
 function renderResults() {
   const query = els.listSearchInput.value;
-  const filtered = activeKanjiData().filter((item) => matches(item, query));
+  const scopedKanji = activeKanjiData();
+  const filtered = scopedKanji.filter((item) => matches(item, query));
+  const wordItems = kanjiItemsFromSearchWord(query, scopedKanji);
   els.resultList.innerHTML = "";
 
-  if (!filtered.length) {
+  if (!filtered.length && !wordItems.length) {
     els.resultList.innerHTML = `
       <div class="empty-result">
         <p class="status-text">見つかりませんでした。よみを短くして試してみてください。</p>
@@ -2472,10 +2474,15 @@ function renderResults() {
   }
 
   els.listStatus.textContent = query.trim()
-    ? `${gradeScopeText()}の中で「${query}」が ${filtered.length} 件見つかりました。`
+    ? `${gradeScopeText()}の中で「${query}」が ${wordItems.length || filtered.length} 件見つかりました。`
     : `${gradeScopeText()}の漢字を表示しています。`;
 
+  if (wordItems.length) {
+    renderWordKanjiGroup(query, wordItems);
+  }
+
   for (const item of filtered) {
+    if (wordItems.some((wordItem) => wordItem.item.k === item.k)) continue;
     const button = document.createElement("button");
     button.className = `kanji-tile${item.k === selectedKanji.k ? " selected" : ""}`;
     button.type = "button";
@@ -2491,6 +2498,66 @@ function renderResults() {
     });
     els.resultList.appendChild(button);
   }
+}
+
+function kanjiItemsFromSearchWord(query, scopedKanji = activeKanjiData()) {
+  const normalizedQuery = normalize(query);
+  if (!normalizedQuery) return [];
+  const byKanji = new Map(scopedKanji.map((item) => [item.k, item]));
+  const directChars = [...query].filter((char) => byKanji.has(char));
+  if (directChars.length) {
+    return directChars.map((char, index) => ({ item: byKanji.get(char), index }));
+  }
+
+  const wordHit = scopedKanji
+    .flatMap((item) => item.words.map((word) => ({ item, word })))
+    .find(({ word }) => compoundWordMatchesQuery(word, normalizedQuery));
+  if (!wordHit) return [];
+
+  return [...wordHit.word]
+    .map((char, index) => byKanji.has(char) ? { item: byKanji.get(char), index, word: wordHit.word } : null)
+    .filter(Boolean);
+}
+
+function compoundWordMatchesQuery(word, normalizedQuery) {
+  const normalizedWord = normalize(word);
+  if (normalizedWord === normalizedQuery || normalizedWord.includes(normalizedQuery)) return true;
+  const reading = normalize(readingFromRubyDictionaryWord(word));
+  return Boolean(reading && (reading === normalizedQuery || reading.includes(normalizedQuery)));
+}
+
+function readingFromRubyDictionaryWord(word) {
+  const parts = rubyDictionary[word];
+  if (!parts) return "";
+  return parts.map(([text, ruby]) => ruby || text).join("");
+}
+
+function renderWordKanjiGroup(query, wordItems) {
+  const group = document.createElement("section");
+  group.className = "word-kanji-group";
+  group.innerHTML = `
+    <div class="word-kanji-title">「${escapeHtml(query)}」の漢字</div>
+    <div class="word-kanji-list"></div>
+  `;
+  const list = group.querySelector(".word-kanji-list");
+  wordItems.forEach(({ item }, index) => {
+    const button = document.createElement("button");
+    button.className = "word-kanji-card";
+    button.type = "button";
+    button.innerHTML = `
+      <span class="word-kanji-order">${index + 1}</span>
+      <span class="tile-kanji">${item.k}</span>
+      <span class="tile-reading">${item.kun || item.on}</span>
+      <span class="target-action"><b>${item.k}</b> のお手本を見る</span>
+    `;
+    button.addEventListener("click", () => {
+      selectKanji(item);
+      traceParentView = "listView";
+      switchView("traceView");
+    });
+    list.appendChild(button);
+  });
+  els.resultList.appendChild(group);
 }
 
 function readingForRuby(item) {
