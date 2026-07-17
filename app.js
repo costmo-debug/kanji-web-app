@@ -2961,6 +2961,7 @@ function stopDraw() {
 const okuriganaQuizzes = [
   {
     label: "送り仮名も考えよう",
+    grade: 2,
     prompt: "「ひろい」は、どう書く？",
     answer: "広い",
     explanation: "よくある間違いは「広ろい」。正しくは「広」が漢字で、「い」だけが送り仮名です。",
@@ -2968,6 +2969,7 @@ const okuriganaQuizzes = [
   },
   {
     label: "送り仮名も考えよう",
+    grade: 2,
     prompt: "「はしった」は、どう書く？",
     answer: "走った",
     explanation: "よくある間違いは「走た」。正しくは「走」に「った」を付けます。",
@@ -2975,6 +2977,7 @@ const okuriganaQuizzes = [
   },
   {
     label: "送り仮名も考えよう",
+    grade: 2,
     prompt: "「かく」は、どう書く？",
     answer: "書く",
     explanation: "よくある間違いは送り仮名を落として「書」だけにすることです。",
@@ -2982,6 +2985,7 @@ const okuriganaQuizzes = [
   },
   {
     label: "送り仮名も考えよう",
+    grade: 2,
     prompt: "「あたらしい」は、どう書く？",
     answer: "新しい",
     explanation: "よくある間違いは「新らしい」。正しくは「新しい」です。",
@@ -2989,6 +2993,7 @@ const okuriganaQuizzes = [
   },
   {
     label: "送り仮名も考えよう",
+    grade: 2,
     prompt: "「おおい」は、どう書く？",
     answer: "多い",
     explanation: "よくある間違いは「多おい」。正しくは「多い」です。",
@@ -2999,6 +3004,7 @@ const okuriganaQuizzes = [
 const sentenceQuizzes = [
   {
     label: "文の中の漢字",
+    grade: 2,
     prompt: "絵日記を かく。",
     before: "絵日記を",
     blankReading: "か",
@@ -3009,6 +3015,7 @@ const sentenceQuizzes = [
   },
   {
     label: "文の中の漢字",
+    grade: 2,
     prompt: "こうていを はしる。",
     before: "こうていを",
     blankReading: "はし",
@@ -3019,6 +3026,7 @@ const sentenceQuizzes = [
   },
   {
     label: "文の中の漢字",
+    grade: 2,
     prompt: "あたらしい 本を よむ。",
     before: "",
     blankReading: "あたら",
@@ -3057,6 +3065,13 @@ function quizPromptHtml(quiz) {
   `;
 }
 
+function quizReadingFor(item) {
+  return item.yomi.find((reading) => /^[ぁ-ん]+$/.test(reading) && reading !== item.k)
+    || kanaFromKatakana((item.on || "").split(/[・/]/)[0])
+    || item.kun.split(/[・/]/)[0]
+    || item.k;
+}
+
 function makeReadingQuiz() {
   const quizPool = activeKanjiData();
   const answer = quizPool[Math.floor(Math.random() * quizPool.length)];
@@ -3066,22 +3081,26 @@ function makeReadingQuiz() {
     if (!options.includes(candidate)) options.push(candidate);
   }
   return {
-    label: "読みから漢字",
-    prompt: answer.yomi[answer.yomi.length - 1] || answer.yomi[0],
+    label: `読みから漢字（${gradeScopeText()}）`,
+    prompt: quizReadingFor(answer),
     answer: answer.k,
-    explanation: `「${answer.k}」の読みです。`,
+    explanation: `「${answer.k}」の読みのひとつです。`,
     options: options.sort(() => Math.random() - 0.5)
   };
 }
 
 function makeSentenceQuiz() {
-  const quiz = sentenceQuizzes[Math.floor(Math.random() * sentenceQuizzes.length)];
-  return { ...quiz, type: "sentence-blank", options: [...quiz.options].sort(() => Math.random() - 0.5) };
+  const pool = sentenceQuizzes.filter((quiz) => (quiz.grade || 1) <= activeGradeMax);
+  if (!pool.length) return makeReadingQuiz();
+  const quiz = pool[Math.floor(Math.random() * pool.length)];
+  return { ...quiz, label: `${quiz.label}（${gradeScopeText()}）`, type: "sentence-blank", options: [...quiz.options].sort(() => Math.random() - 0.5) };
 }
 
 function makeOkuriganaQuiz() {
-  const quiz = okuriganaQuizzes[Math.floor(Math.random() * okuriganaQuizzes.length)];
-  return { ...quiz, compact: true, options: [...quiz.options].sort(() => Math.random() - 0.5) };
+  const pool = okuriganaQuizzes.filter((quiz) => (quiz.grade || 1) <= activeGradeMax);
+  if (!pool.length) return makeReadingQuiz();
+  const quiz = pool[Math.floor(Math.random() * pool.length)];
+  return { ...quiz, label: `${quiz.label}（${gradeScopeText()}）`, compact: true, options: [...quiz.options].sort(() => Math.random() - 0.5) };
 }
 
 function checkAnswer(button, value) {
