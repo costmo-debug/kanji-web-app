@@ -848,8 +848,7 @@ body[data-view="traceView"][data-trace-parent="listView"] .search-panel {
   user-select: none;
 }
 
-.photo-preview.has-focus::after {
-  content: "";
+.photo-select-box {
   position: absolute;
   left: var(--focus-x, 50%);
   top: var(--focus-y, 58%);
@@ -857,9 +856,34 @@ body[data-view="traceView"][data-trace-parent="listView"] .search-panel {
   height: var(--focus-h, 110px);
   border: 4px solid #ff7a1a;
   border-radius: 12px;
+  background: rgba(255, 122, 26, 0.08);
   box-shadow: 0 0 0 999px rgba(255, 255, 255, 0.12), 0 3px 12px rgba(0,0,0,0.28);
   transform: translate(-50%, -50%);
   pointer-events: none;
+}
+
+.photo-select-label {
+  position: absolute;
+  left: 8px;
+  top: 6px;
+  border-radius: 999px;
+  background: #fff16a;
+  color: #4b2d00;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.photo-resize-handle {
+  position: absolute;
+  right: -14px;
+  bottom: -14px;
+  width: 34px;
+  height: 34px;
+  border: 4px solid #4b3a2e;
+  border-radius: 999px;
+  background: #ff7a1a;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 .photo-tip {

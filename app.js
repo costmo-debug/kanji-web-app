@@ -229,8 +229,8 @@ let sentenceInputTimer = 0;
 let traceParentView = "searchView";
 let selectedPhotoFile = null;
 let selectedPhotoFocus = { x: 0.5, y: 0.58 };
-let selectedPhotoBox = { x: 0.33, y: 0.44, width: 0.34, height: 0.28 };
-let photoDragStart = null;
+let selectedPhotoBox = { x: 0.36, y: 0.42, width: 0.28, height: 0.22 };
+let photoBoxDrag = null;
 
 function clearSelectedAlternatives() {
   Object.keys(selectedAlternativeByReading).forEach((key) => {
@@ -4099,21 +4099,30 @@ function updatePhotoBoxMarker() {
   els.photoPreview.style.setProperty("--focus-w", `${markerW}px`);
   els.photoPreview.style.setProperty("--focus-h", `${markerH}px`);
   els.photoPreview.classList.add("has-focus");
+  let box = els.photoPreview.querySelector(".photo-select-box");
+  if (!box) {
+    box = document.createElement("div");
+    box.className = "photo-select-box";
+    box.innerHTML = `<span class="photo-select-label">ここを読む</span><span class="photo-resize-handle" aria-hidden="true"></span>`;
+    els.photoPreview.appendChild(box);
+  }
 }
 
-function setPhotoBoxFromPoints(start, end) {
-  const minX = Math.min(start.x, end.x);
-  const minY = Math.min(start.y, end.y);
-  const maxX = Math.max(start.x, end.x);
-  const maxY = Math.max(start.y, end.y);
-  const width = Math.max(0.08, maxX - minX);
-  const height = Math.max(0.08, maxY - minY);
-  selectedPhotoBox = {
-    x: Math.min(0.98 - width, minX),
-    y: Math.min(0.98 - height, minY),
+function normalizePhotoBox(box) {
+  const minWidth = 0.16;
+  const minHeight = 0.14;
+  const width = Math.min(0.86, Math.max(minWidth, box.width));
+  const height = Math.min(0.72, Math.max(minHeight, box.height));
+  return {
+    x: Math.min(1 - width, Math.max(0, box.x)),
+    y: Math.min(1 - height, Math.max(0, box.y)),
     width,
     height
   };
+}
+
+function setPhotoBox(box) {
+  selectedPhotoBox = normalizePhotoBox(box);
   selectedPhotoFocus = {
     x: selectedPhotoBox.x + selectedPhotoBox.width / 2,
     y: selectedPhotoBox.y + selectedPhotoBox.height / 2
@@ -4124,23 +4133,46 @@ function setPhotoBoxFromPoints(start, end) {
 function startPhotoSelection(event) {
   if (!selectedPhotoFile) return;
   event.preventDefault();
-  photoDragStart = pointInPhotoImage(event);
-  setPhotoBoxFromPoints(photoDragStart, photoDragStart);
+  const point = pointInPhotoImage(event);
+  const box = selectedPhotoBox;
+  const nearRight = Math.abs(point.x - (box.x + box.width)) < 0.12;
+  const nearBottom = Math.abs(point.y - (box.y + box.height)) < 0.12;
+  const inside = point.x >= box.x && point.x <= box.x + box.width && point.y >= box.y && point.y <= box.y + box.height;
+  photoBoxDrag = {
+    mode: inside && nearRight && nearBottom ? "resize" : "move",
+    start: point,
+    box: { ...box }
+  };
   els.photoPreview.setPointerCapture?.(event.pointerId);
 }
 
 function movePhotoSelection(event) {
-  if (!photoDragStart) return;
+  if (!photoBoxDrag) return;
   event.preventDefault();
-  setPhotoBoxFromPoints(photoDragStart, pointInPhotoImage(event));
+  const point = pointInPhotoImage(event);
+  const dx = point.x - photoBoxDrag.start.x;
+  const dy = point.y - photoBoxDrag.start.y;
+  if (photoBoxDrag.mode === "resize") {
+    setPhotoBox({
+      ...photoBoxDrag.box,
+      width: photoBoxDrag.box.width + dx,
+      height: photoBoxDrag.box.height + dy
+    });
+  } else {
+    setPhotoBox({
+      ...photoBoxDrag.box,
+      x: photoBoxDrag.box.x + dx,
+      y: photoBoxDrag.box.y + dy
+    });
+  }
 }
 
 function finishPhotoSelection(event) {
-  if (!photoDragStart) return;
+  if (!photoBoxDrag) return;
   event.preventDefault();
-  setPhotoBoxFromPoints(photoDragStart, pointInPhotoImage(event));
-  photoDragStart = null;
-  setPhotoStatus("読みたいところを囲みました。「写真を読む」を押してください。");
+  movePhotoSelection(event);
+  photoBoxDrag = null;
+  setPhotoStatus("四角の中を読みます。場所や大きさを直してから「写真を読む」を押してください。");
 }
 
 async function makeFocusCropForOcr(file) {
@@ -4325,8 +4357,8 @@ els.photoInput.addEventListener("change", () => {
   if (!file) return;
   selectedPhotoFile = file;
   selectedPhotoFocus = { x: 0.5, y: 0.58 };
-  selectedPhotoBox = { x: 0.33, y: 0.44, width: 0.34, height: 0.28 };
-  photoDragStart = null;
+  selectedPhotoBox = { x: 0.36, y: 0.42, width: 0.28, height: 0.22 };
+  photoBoxDrag = null;
   const url = URL.createObjectURL(file);
   els.photoPreview.innerHTML = `<img src="${url}" alt="選んだ写真">`;
   const previewImage = els.photoPreview.querySelector("img");
@@ -4334,13 +4366,13 @@ els.photoInput.addEventListener("change", () => {
     updatePhotoBoxMarker();
   });
   els.cameraSearchInput.value = "";
-  setPhotoStatus("写真を選びました。読みたいところを指で囲んでから「写真を読む」を押してください。");
-  setCatMessage("写真を選べたよ。読みたいところを指で囲んでね。");
+  setPhotoStatus("オレンジの四角を読みたい文字に合わせてください。中を動かせます。右下で大きくできます。");
+  setCatMessage("オレンジの四角を読みたい漢字に合わせてね。");
 });
 els.photoPreview.addEventListener("pointerdown", startPhotoSelection);
 els.photoPreview.addEventListener("pointermove", movePhotoSelection);
 els.photoPreview.addEventListener("pointerup", finishPhotoSelection);
-els.photoPreview.addEventListener("pointercancel", () => { photoDragStart = null; });
+els.photoPreview.addEventListener("pointercancel", () => { photoBoxDrag = null; });
 els.photoOcrButton.addEventListener("click", readPhotoText);
 els.cameraSearchButton.addEventListener("click", () => {
   showPhotoCandidates(els.cameraSearchInput.value);
