@@ -394,7 +394,7 @@ input {
 
 .mode-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   margin: 14px 0;
 }
@@ -509,6 +509,7 @@ input {
 }
 
 body[data-view="listView"] .search-panel,
+body[data-view="cameraView"] .search-panel,
 body[data-view="quizView"] .search-panel,
 body[data-view="traceView"] .search-panel,
 body[data-view="traceView"][data-trace-parent="listView"] .search-panel {
@@ -838,6 +839,28 @@ body[data-view="traceView"][data-trace-parent="listView"] .search-panel {
   display: block;
   font-weight: 800;
   margin-bottom: 8px;
+}
+
+.camera-search textarea {
+  width: 100%;
+  min-height: 92px;
+  resize: vertical;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  font: inherit;
+  font-size: 17px;
+  line-height: 1.5;
+  background: #fff;
+}
+
+.camera-search .search-row {
+  margin-top: 10px;
+}
+
+.secondary-action {
+  background: var(--yellow);
+  color: var(--brown);
 }
 
 .trace-board {

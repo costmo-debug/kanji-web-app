@@ -44,6 +44,7 @@
       <nav class="mode-tabs bottom-tabs" aria-label="メニュー">
         <button class="tab active" type="button" data-view="searchView">さがす</button>
         <button class="tab" type="button" data-view="listView">漢字一覧</button>
+        <button class="tab" type="button" data-view="cameraView">写真</button>
         <button class="tab" type="button" data-view="quizView">クイズ</button>
       </nav>
 
@@ -140,7 +141,7 @@
           <div class="camera-head">
             <div>
               <h2>しゃしんでさがす</h2>
-              <p>プリントやノートを写して、気になる漢字を見ながら入力できます。</p>
+              <p>プリントやノートの写真から、漢字を読み取ってさがします。</p>
             </div>
             <label class="camera-button">
               とる
@@ -151,13 +152,14 @@
             <span>ここに写真が出ます</span>
           </div>
           <div class="camera-search">
-            <label for="cameraSearchInput">写真の中の漢字・よみを入れる</label>
+            <label for="cameraSearchInput">読み取った文字</label>
+            <textarea id="cameraSearchInput" rows="3" autocomplete="off" placeholder="写真を読むと、ここに文字が入ります"></textarea>
             <div class="search-row">
-              <input id="cameraSearchInput" type="search" autocomplete="off" placeholder="例: 走る、はしる、走">
-              <button id="cameraSearchButton" class="round-button" type="button">さがす</button>
+              <button id="photoOcrButton" class="primary-button" type="button">写真を読む</button>
+              <button id="cameraSearchButton" class="primary-button secondary-action" type="button">候補を出す</button>
             </div>
           </div>
-          <p class="status-text">本格的な自動読み取りは次の段階で追加します。まずは写真を見ながらすぐ検索できます。</p>
+          <p id="photoOcrStatus" class="status-text" aria-live="polite">写真を選んでから「写真を読む」を押してください。初回は読み込みに少し時間がかかります。</p>
         </article>
       </section>
 
@@ -186,6 +188,7 @@
     <button id="closeInstallDialog" class="primary-button" type="button">わかった</button>
   </dialog>
 
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

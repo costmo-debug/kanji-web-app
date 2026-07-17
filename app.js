@@ -195,6 +195,8 @@ const els = {
   photoPreview: document.querySelector("#photoPreview"),
   cameraSearchInput: document.querySelector("#cameraSearchInput"),
   cameraSearchButton: document.querySelector("#cameraSearchButton"),
+  photoOcrButton: document.querySelector("#photoOcrButton"),
+  photoOcrStatus: document.querySelector("#photoOcrStatus"),
   quizLabel: document.querySelector("#quizLabel"),
   quizPrompt: document.querySelector("#quizPrompt"),
   quizOptions: document.querySelector("#quizOptions"),
@@ -224,6 +226,7 @@ let activeGradeMax = Number(localStorage.getItem("kanji-support-grade-max") || "
 const selectedAlternativeByReading = {};
 let sentenceInputTimer = 0;
 let traceParentView = "searchView";
+let selectedPhotoFile = null;
 
 function clearSelectedAlternatives() {
   Object.keys(selectedAlternativeByReading).forEach((key) => {
@@ -3954,6 +3957,62 @@ function launchFireworks(size = "small") {
   }, size === "big" ? 2600 : 1800);
 }
 
+function cleanOcrText(text) {
+  return String(text || "")
+    .replace(/[|｜]/g, "")
+    .replace(/[ \t]+/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function setPhotoStatus(message) {
+  if (els.photoOcrStatus) els.photoOcrStatus.textContent = message;
+}
+
+async function readPhotoText() {
+  if (!selectedPhotoFile) {
+    setPhotoStatus("先に写真を選んでください。");
+    return;
+  }
+  if (!window.Tesseract) {
+    setPhotoStatus("文字を読む部品を読み込めませんでした。ネットにつながっているか確認してください。");
+    return;
+  }
+
+  els.photoOcrButton.disabled = true;
+  els.cameraSearchButton.disabled = true;
+  setPhotoStatus("写真を読んでいます。初回は少し時間がかかります。");
+  setCatMessage("写真の文字を読んでいるよ。少しだけ待ってね。");
+
+  let worker = null;
+  try {
+    worker = await Tesseract.createWorker("jpn", 1, {
+      logger: (message) => {
+        if (message.status === "recognizing text" && typeof message.progress === "number") {
+          setPhotoStatus(`写真を読んでいます。${Math.round(message.progress * 100)}%`);
+        }
+      }
+    });
+    const result = await worker.recognize(selectedPhotoFile);
+    const text = cleanOcrText(result.data.text);
+    if (!text) {
+      setPhotoStatus("文字を見つけられませんでした。明るく大きく撮るか、下の欄に入力してください。");
+      setCatMessage("うまく読めなかったみたい。近づいて、明るく撮ると読みやすいよ。");
+      return;
+    }
+    els.cameraSearchInput.value = text;
+    setPhotoStatus("読み取った文字を確認して、「候補を出す」を押してください。");
+    setCatMessage("読めた文字を入れたよ。ちがうところがあれば直してね。");
+  } catch (error) {
+    setPhotoStatus("写真の読み取りに失敗しました。文字が大きく写るように撮り直すか、手で入力してください。");
+    setCatMessage("写真が少し読みにくかったみたい。手入力でも続けられるよ。");
+  } finally {
+    if (worker) await worker.terminate().catch(() => {});
+    els.photoOcrButton.disabled = false;
+    els.cameraSearchButton.disabled = false;
+  }
+}
+
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => switchView(tab.dataset.view));
 });
@@ -4003,17 +4062,22 @@ els.nextCandidateButton.addEventListener("click", goToNextCandidate);
 els.photoInput.addEventListener("change", () => {
   const file = els.photoInput.files && els.photoInput.files[0];
   if (!file) return;
+  selectedPhotoFile = file;
   const url = URL.createObjectURL(file);
   els.photoPreview.innerHTML = `<img src="${url}" alt="選んだ写真">`;
+  els.cameraSearchInput.value = "";
+  setPhotoStatus("写真を選びました。「写真を読む」を押してください。");
+  setCatMessage("写真を選べたよ。文字を読むボタンを押してね。");
 });
+els.photoOcrButton.addEventListener("click", readPhotoText);
 els.cameraSearchButton.addEventListener("click", () => {
   clearSelectedAlternatives();
   els.sentenceInput.value = els.cameraSearchInput.value;
-  renderResults();
+  renderSentenceCandidates();
   switchView("searchView");
 });
 els.cameraSearchInput.addEventListener("keydown", (event) => {
-  if (event.key !== "Enter") return;
+  if (event.key !== "Enter" || (!event.ctrlKey && !event.metaKey)) return;
   els.cameraSearchButton.click();
 });
 document.querySelector("#installHelpButton").addEventListener("click", () => els.installDialog.showModal());
