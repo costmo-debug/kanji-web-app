@@ -4073,12 +4073,18 @@ function binarizeCanvas(canvas) {
 
 function setPhotoFocusFromEvent(event) {
   if (!selectedPhotoFile) return;
-  const rect = els.photoPreview.getBoundingClientRect();
+  const image = els.photoPreview.querySelector("img");
+  const rect = (image || els.photoPreview).getBoundingClientRect();
   const x = Math.min(0.95, Math.max(0.05, (event.clientX - rect.left) / rect.width));
   const y = Math.min(0.95, Math.max(0.05, (event.clientY - rect.top) / rect.height));
   selectedPhotoFocus = { x, y };
-  els.photoPreview.style.setProperty("--focus-x", `${x * 100}%`);
-  els.photoPreview.style.setProperty("--focus-y", `${y * 100}%`);
+  const previewRect = els.photoPreview.getBoundingClientRect();
+  const markerX = rect.left - previewRect.left + rect.width * x;
+  const markerY = rect.top - previewRect.top + rect.height * y;
+  els.photoPreview.style.setProperty("--focus-x", `${markerX}px`);
+  els.photoPreview.style.setProperty("--focus-y", `${markerY}px`);
+  els.photoPreview.style.setProperty("--focus-w", `${Math.min(rect.width * 0.34, 170)}px`);
+  els.photoPreview.style.setProperty("--focus-h", `${Math.min(rect.height * 0.28, 130)}px`);
   els.photoPreview.classList.add("has-focus");
   setPhotoStatus("読みたい場所を選びました。「写真を読む」を押してください。");
 }
@@ -4260,9 +4266,16 @@ els.photoInput.addEventListener("change", () => {
   selectedPhotoFocus = { x: 0.5, y: 0.58 };
   const url = URL.createObjectURL(file);
   els.photoPreview.innerHTML = `<img src="${url}" alt="選んだ写真">`;
-  els.photoPreview.style.setProperty("--focus-x", "50%");
-  els.photoPreview.style.setProperty("--focus-y", "58%");
-  els.photoPreview.classList.add("has-focus");
+  const previewImage = els.photoPreview.querySelector("img");
+  previewImage.addEventListener("load", () => {
+    const imageRect = previewImage.getBoundingClientRect();
+    const previewRect = els.photoPreview.getBoundingClientRect();
+    els.photoPreview.style.setProperty("--focus-x", `${imageRect.left - previewRect.left + imageRect.width * selectedPhotoFocus.x}px`);
+    els.photoPreview.style.setProperty("--focus-y", `${imageRect.top - previewRect.top + imageRect.height * selectedPhotoFocus.y}px`);
+    els.photoPreview.style.setProperty("--focus-w", `${Math.min(imageRect.width * 0.34, 170)}px`);
+    els.photoPreview.style.setProperty("--focus-h", `${Math.min(imageRect.height * 0.28, 130)}px`);
+    els.photoPreview.classList.add("has-focus");
+  });
   els.cameraSearchInput.value = "";
   setPhotoStatus("写真を選びました。読みたい漢字のあたりをタップしてから「写真を読む」を押してください。");
   setCatMessage("写真を選べたよ。読みたいところをタップしてね。");

@@ -852,10 +852,10 @@ body[data-view="traceView"][data-trace-parent="listView"] .search-panel {
   position: absolute;
   left: var(--focus-x, 50%);
   top: var(--focus-y, 58%);
-  width: 82px;
-  height: 82px;
+  width: var(--focus-w, 140px);
+  height: var(--focus-h, 110px);
   border: 4px solid #ff7a1a;
-  border-radius: 999px;
+  border-radius: 12px;
   box-shadow: 0 0 0 999px rgba(255, 255, 255, 0.12), 0 3px 12px rgba(0,0,0,0.28);
   transform: translate(-50%, -50%);
   pointer-events: none;
